@@ -1,0 +1,31 @@
+# 编译产物
+*.exe
+*.pdb
+*.zip
+*.7z
+*.rar
+
+# 打补丁产生的备份与运行时数据
+*.pclcebak
+PCL/
+PCLCE.state
+
+# 用户自行下载的 PCL2 CE
+PCL2_CE_*.exe
+windowsdesktop-runtime-*.exe
+
+# 编译中间文件
+build/
+obj/
+bin/
+*.tmp
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# 系统
+Thumbs.db
+desktop.ini
