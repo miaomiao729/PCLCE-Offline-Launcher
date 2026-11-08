@@ -8,13 +8,34 @@
 - **区域限制**：解除中国大陆地区的 Minecraft 下载 / 文件补全 / 版本安装 / 整合包安装封锁
 
 > **本仓库不包含 PCL2 CE 的任何代码、二进制、API 密钥或美术资源。**
-> 你需要自己从官方下载 PCL2 CE，本工具只对你本机已有的文件做修改。
+> 启动器只会从**官方 GitHub Release** 下载原版 PCL2 CE 到本机，然后打补丁。
 
 ---
 
 ## 快速开始
 
-### 1. 编译工具
+### 方式 A：下载现成的（推荐，零编译）
+
+去 [Releases](https://github.com/miaomiao729/PCLCE-Offline-Launcher/releases/latest) 下载：
+
+- `PCLCE-Launcher.exe`
+- `PCLCE-Patch.exe`
+
+两个文件放到**同一个文件夹**里，双击 `PCLCE-Launcher.exe` 就行。
+
+它会自动完成整套流程：
+
+1. 本目录没有 PCL2 CE → 从官方 Release 下载（约 22 MB）
+2. 检查 .NET 10 桌面运行时，缺了自动下载安装
+3. 检查 CE 是否已解锁，没解锁自动打补丁（先备份原版为 `*.pclcebak`）
+4. 启动 PCL2 CE
+
+之后再打开会显示「已全部解锁，无需改动」，直接启动。
+
+> 这两个 exe 只做两件事：下载官方原版、改本机那几个字节。
+> 它们**不含** PCL 的任何代码或二进制，体积各只有十几 KB。
+
+### 方式 B：自己编译
 
 需要 Windows 自带的 .NET Framework 4.x（Win10/11 都有，不用装 SDK）：
 
@@ -24,25 +45,9 @@ build.bat
 
 产出 `build\PCLCE-Patch.exe` 和 `build\PCLCE-Launcher.exe`。
 
-### 2. 下载 PCL2 CE
+然后把它们丢进同一个文件夹，双击启动器即可 —— 后面流程和方式 A 一样。
 
-从官方发布页下载，放进 `build\` 目录：
-
-<https://github.com/PCL-Community/PCL-CE/releases>
-
-文件名形如 `PCL2_CE_Release_x64.exe`。
-
-### 3. 双击启动
-
-双击 `build\PCLCE-Launcher.exe`。它会：
-
-1. 检查 .NET 10 桌面运行时，缺了自动下载安装
-2. 检查 CE 是否已解锁，没解锁自动打补丁（先备份原版为 `*.pclcebak`）
-3. 启动 PCL2 CE
-
-之后再打开会显示「已全部解锁，无需改动」，直接启动。
-
-### 4. 只用补丁器（不要启动器）
+### 单独使用补丁器（不要启动器）
 
 ```bat
 PCLCE-Patch.exe                         自动找当前目录的 PCL2_CE_*.exe

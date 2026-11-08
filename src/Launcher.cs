@@ -40,20 +40,23 @@ namespace PCLCEOfflineLauncher
             Console.Title = "PCL2 CE 离线解锁启动器";
             Banner();
 
-            // ---------- 1. 找 CE ----------
+            // ---------- 1. 找 CE，没有就从官方下载 ----------
             string ce = FindCe();
             if (ce == null)
             {
-                Console.WriteLine("[!] 本目录没有找到 PCL2_CE_*.exe");
+                Console.WriteLine("[!] 本目录没有找到 PCL2 CE，将从官方下载。");
                 Console.WriteLine();
-                Console.WriteLine("    请从官方发布页下载 PCL2 CE，放到本目录后再运行：");
-                Console.WriteLine("    " + OfficialReleaseUrl);
+                ce = DownloadCe();
+                if (ce == null)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("    自动下载失败。你也可以手动下载后放到本目录：");
+                    Console.WriteLine("    " + OfficialReleaseUrl);
+                    Console.WriteLine("    文件名形如 PCL2_CE_Release_x64.exe");
+                    Pause();
+                    return 2;
+                }
                 Console.WriteLine();
-                Console.WriteLine("    文件名形如 PCL2_CE_Release_x64.exe");
-                Console.WriteLine();
-                Console.WriteLine("    （本工具不含 PCL2 CE 本体，需你自行从官方获取）");
-                Pause();
-                return 2;
             }
             Info("启动器：" + Path.GetFileName(ce));
 
@@ -101,6 +104,84 @@ namespace PCLCEOfflineLauncher
                 Pause();
                 return 3;
             }
+        }
+
+        // ------------------------------------------------------------ 下载 CE
+        /// <summary>
+        /// 从官方 GitHub Release 下载 PCL2 CE。本工具只负责下载官方原版，
+        /// 不含也不分发任何 PCL 的代码或二进制。
+        /// </summary>
+        private static string DownloadCe()
+        {
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+
+            // 先问 GitHub API 拿最新版的下载地址；拿不到就用直链兜底
+            string url = ResolveLatestCeUrl();
+            if (url == null)
+            {
+                Info("无法查询最新版本，使用直链…");
+                url = "https://github.com/PCL-Community/PCL-CE/releases/download/v2.15.1/PCL2_CE_Release_x64.exe";
+            }
+
+            string dest = Path.Combine(_dir, "PCL2_CE_Release_x64.exe");
+            Info("下载地址：" + url);
+            Info("正在下载 PCL2 CE（约 22 MB）…");
+
+            try
+            {
+                using (var wc = new WebClient())
+                {
+                    wc.Headers.Add("User-Agent", "PCLCE-Offline-Launcher");
+                    wc.DownloadProgressChanged += delegate(object s, DownloadProgressChangedEventArgs e)
+                    {
+                        Console.Write("\r    下载中 " + e.ProgressPercentage + "%   ");
+                    };
+                    wc.DownloadFileTaskAsync(new Uri(url), dest).Wait();
+                    Console.WriteLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine();
+                Warn("下载失败：" + ex.Message);
+                try { if (File.Exists(dest)) File.Delete(dest); } catch { }
+                return null;
+            }
+
+            var fi = new FileInfo(dest);
+            if (fi.Length < 5000000)
+            {
+                Warn("下载的文件大小异常（" + fi.Length + " 字节），已删除。");
+                try { File.Delete(dest); } catch { }
+                return null;
+            }
+
+            Info("下载完成：" + fi.Length.ToString("N0") + " 字节");
+            return dest;
+        }
+
+        /// <summary>通过 GitHub API 查最新 Release 里的 x64 资产地址。</summary>
+        private static string ResolveLatestCeUrl()
+        {
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/PCL-Community/PCL-CE/releases/latest");
+                req.UserAgent = "PCLCE-Offline-Launcher";
+                req.Accept = "application/vnd.github+json";
+                req.Timeout = 15000;
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string json = sr.ReadToEnd();
+                    // 找 "name":"...Release_x64.exe" 对应的 browser_download_url
+                    var m = System.Text.RegularExpressions.Regex.Match(
+                        json,
+                        "\"browser_download_url\"\\s*:\\s*\"([^\"]*Release_x64\\.exe)\"");
+                    if (m.Success) return m.Groups[1].Value;
+                }
+            }
+            catch { }
+            return null;
         }
 
         // ------------------------------------------------------------ 运行时
